@@ -8,7 +8,7 @@ https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/animated-
 
 ## arrows
 
-[arrows](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/arrows.mp4)
+[![arrows] https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/arrows.mp4](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/arrows.mp4)
 
 ## bettercrt
 
