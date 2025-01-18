@@ -52,11 +52,20 @@ for file in *.glsl; do
             key code 36 # Return key
         end tell'
         
-        # Start screen recording with ffmpeg (compressed mp4)
+        # First capture video at reduced size
         ffmpeg -f avfoundation -capture_cursor 1 -i "0:none" -t 10 \
             -vf "scale=iw/2:ih/2" \
-            -c:v libx264 -preset fast -crf 23 \
-            -y "shader_previews/${filename}.mp4"
+            -c:v libx264 -preset fast \
+            -y "shader_previews/${filename}_temp.mp4"
+            
+        # Convert to optimized GIF
+        ffmpeg -i "shader_previews/${filename}_temp.mp4" \
+            -vf "fps=10,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" \
+            -loop 0 \
+            "shader_previews/${filename}.gif"
+            
+        # Remove temporary video
+        rm "shader_previews/${filename}_temp.mp4"
         
         # Close Ghostty (force kill if necessary)
         pkill -9 -x "ghostty"
@@ -67,7 +76,7 @@ for file in *.glsl; do
         # Add shader section to README.md
         echo "## ${filename}" >> README.md
         echo "" >> README.md
-        echo "[![${filename} https://github.com/$(git config --get remote.origin.url | sed 's/.*github.com[\/:]//' | sed 's/\.git$//')/raw/main/shader_previews/${filename}.mp4](https://github.com/$(git config --get remote.origin.url | sed 's/.*github.com[\/:]//' | sed 's/\.git$//')/raw/main/shader_previews/${filename}.mp4)" >> README.md
+        echo "![${filename}](shader_previews/${filename}.gif)" >> README.md
         echo "" >> README.md
     fi
 done

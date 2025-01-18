@@ -4,209 +4,209 @@ A collection of shader previews for Ghostty terminal.
 
 ## animated-gradient-shader
 
-https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/animated-gradient-shader.mp4
+![animated-gradient-shader](shader_previews/animated-gradient-shader.gif)
 
 ## arrows
 
-[![arrows] https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/arrows.mp4](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/arrows.mp4)
+![arrows](shader_previews/arrows.gif)
 
 ## bettercrt
 
-[bettercrt](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/bettercrt.mp4)
+![bettercrt](shader_previews/bettercrt.gif)
 
 ## bloom
 
-[bloom](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/bloom.mp4)
+![bloom](shader_previews/bloom.gif)
 
 ## city-clouds
 
-[city-clouds](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/city-clouds.mp4)
+![city-clouds](shader_previews/city-clouds.gif)
 
 ## clouds
 
-[clouds](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/clouds.mp4)
+![clouds](shader_previews/clouds.gif)
 
 ## coastal
 
-[coastal](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/coastal.mp4)
+![coastal](shader_previews/coastal.gif)
 
 ## crt
 
-[crt](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/crt.mp4)
+![crt](shader_previews/crt.gif)
 
 ## cubes
 
-[cubes](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/cubes.mp4)
+![cubes](shader_previews/cubes.gif)
 
 ## dark-mode-switch
 
-[dark-mode-switch](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/dark-mode-switch.mp4)
+![dark-mode-switch](shader_previews/dark-mode-switch.gif)
 
 ## dither
 
-[dither](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/dither.mp4)
+![dither](shader_previews/dither.gif)
 
 ## drunkard
 
-[drunkard](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/drunkard.mp4)
+![drunkard](shader_previews/drunkard.gif)
 
 ## dvd
 
-[dvd](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/dvd.mp4)
+![dvd](shader_previews/dvd.gif)
 
 ## electro
 
-[electro](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/electro.mp4)
+![electro](shader_previews/electro.gif)
 
 ## elevator
 
-[elevator](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/elevator.mp4)
+![elevator](shader_previews/elevator.gif)
 
 ## fireworks-rockets
 
-[fireworks-rockets](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/fireworks-rockets.mp4)
+![fireworks-rockets](shader_previews/fireworks-rockets.gif)
 
 ## fireworks
 
-[fireworks](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/fireworks.mp4)
+![fireworks](shader_previews/fireworks.gif)
 
 ## galaxy
 
-[galaxy](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/galaxy.mp4)
+![galaxy](shader_previews/galaxy.gif)
 
 ## gears-and-belts
 
-[gears-and-belts](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/gears-and-belts.mp4)
+![gears-and-belts](shader_previews/gears-and-belts.gif)
 
 ## glitchy
 
-[glitchy](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/glitchy.mp4)
+![glitchy](shader_previews/glitchy.gif)
 
 ## glow-city
 
-[glow-city](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/glow-city.mp4)
+![glow-city](shader_previews/glow-city.gif)
 
 ## glow-rgbsplit-twitchy
 
-[glow-rgbsplit-twitchy](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/glow-rgbsplit-twitchy.mp4)
+![glow-rgbsplit-twitchy](shader_previews/glow-rgbsplit-twitchy.gif)
 
 ## gradient-background
 
-[gradient-background](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/gradient-background.mp4)
+![gradient-background](shader_previews/gradient-background.gif)
 
 ## inside-the-matrix
 
-[inside-the-matrix](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/inside-the-matrix.mp4)
+![inside-the-matrix](shader_previews/inside-the-matrix.gif)
 
 ## iso-city
 
-[iso-city](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/iso-city.mp4)
+![iso-city](shader_previews/iso-city.gif)
 
 ## jelly
 
-[jelly](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/jelly.mp4)
+![jelly](shader_previews/jelly.gif)
 
 ## just-snow
 
-[just-snow](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/just-snow.mp4)
+![just-snow](shader_previews/just-snow.gif)
 
 ## matrix-code
 
-[matrix-code](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/matrix-code.mp4)
+![matrix-code](shader_previews/matrix-code.gif)
 
 ## matrix-hallway
 
-[matrix-hallway](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/matrix-hallway.mp4)
+![matrix-hallway](shader_previews/matrix-hallway.gif)
 
 ## negative
 
-[negative](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/negative.mp4)
+![negative](shader_previews/negative.gif)
 
 ## neon-heart
 
-[neon-heart](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/neon-heart.mp4)
+![neon-heart](shader_previews/neon-heart.gif)
 
 ## night-drive
 
-[night-drive](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/night-drive.mp4)
+![night-drive](shader_previews/night-drive.gif)
 
 ## ocean
 
-[ocean](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/ocean.mp4)
+![ocean](shader_previews/ocean.gif)
 
 ## portal
 
-[portal](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/portal.mp4)
+![portal](shader_previews/portal.gif)
 
 ## retro-terminal
 
-[retro-terminal](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/retro-terminal.mp4)
+![retro-terminal](shader_previews/retro-terminal.gif)
 
 ## sine-waves-evil
 
-[sine-waves-evil](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/sine-waves-evil.mp4)
+![sine-waves-evil](shader_previews/sine-waves-evil.gif)
 
 ## sine-waves
 
-[sine-waves](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/sine-waves.mp4)
+![sine-waves](shader_previews/sine-waves.gif)
 
 ## skyline
 
-[skyline](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/skyline.mp4)
+![skyline](shader_previews/skyline.gif)
 
 ## smoke-and-ghost
 
-[smoke-and-ghost](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/smoke-and-ghost.mp4)
+![smoke-and-ghost](shader_previews/smoke-and-ghost.gif)
 
 ## space-lines
 
-[space-lines](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/space-lines.mp4)
+![space-lines](shader_previews/space-lines.gif)
 
 ## space-needle
 
-[space-needle](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/space-needle.mp4)
+![space-needle](shader_previews/space-needle.gif)
 
 ## sparks-from-fire
 
-[sparks-from-fire](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/sparks-from-fire.mp4)
+![sparks-from-fire](shader_previews/sparks-from-fire.gif)
 
 ## spotlight
 
-[spotlight](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/spotlight.mp4)
+![spotlight](shader_previews/spotlight.gif)
 
 ## starfield-colors
 
-[starfield-colors](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/starfield-colors.mp4)
+![starfield-colors](shader_previews/starfield-colors.gif)
 
 ## starfield
 
-[starfield](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/starfield.mp4)
+![starfield](shader_previews/starfield.gif)
 
 ## svfwarp
 
-[svfwarp](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/svfwarp.mp4)
+![svfwarp](shader_previews/svfwarp.gif)
 
 ## synthwave-sunset
 
-[synthwave-sunset](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/synthwave-sunset.mp4)
+![synthwave-sunset](shader_previews/synthwave-sunset.gif)
 
 ## synthwave-triangle
 
-[synthwave-triangle](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/synthwave-triangle.mp4)
+![synthwave-triangle](shader_previews/synthwave-triangle.gif)
 
 ## tft
 
-[tft](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/tft.mp4)
+![tft](shader_previews/tft.gif)
 
 ## underwater
 
-[underwater](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/underwater.mp4)
+![underwater](shader_previews/underwater.gif)
 
 ## urban
 
-[urban](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/urban.mp4)
+![urban](shader_previews/urban.gif)
 
 ## water
 
-[water](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/water.mp4)
+![water](shader_previews/water.gif)
 
