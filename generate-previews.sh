@@ -67,7 +67,7 @@ for file in *.glsl; do
         # Add shader section to README.md
         echo "## ${filename}" >> README.md
         echo "" >> README.md
-        echo "![${filename}](https://github.com/$(git config --get remote.origin.url | sed 's/.*github.com[\/:]//' | sed 's/\.git$//')/raw/main/shader_previews/${filename}.mp4)" >> README.md
+        echo "[${filename}](https://github.com/$(git config --get remote.origin.url | sed 's/.*github.com[\/:]//' | sed 's/\.git$//')/raw/main/shader_previews/${filename}.mp4)" >> README.md
         echo "" >> README.md
     fi
 done
