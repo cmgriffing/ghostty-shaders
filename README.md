@@ -4,7 +4,7 @@ A collection of shader previews for Ghostty terminal.
 
 ## animated-gradient-shader
 
-[animated-gradient-shader](https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/animated-gradient-shader.mp4)
+https://github.com/cmgriffing/ghostty-shaders/raw/main/shader_previews/animated-gradient-shader.mp4
 
 ## arrows
 
