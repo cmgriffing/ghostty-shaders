@@ -22,7 +22,8 @@ Options:
   --author <AUTHOR>        Shader author (for local/stdin input, default: "unknown")
   --blend <MODE>           overlay|replace|additive|multiply (default: overlay)
   --no-blend               Same as --blend replace
-  --flip-y                 Insert Y-axis flip
+  --flip-y                 Insert Y-axis flip (default: on)
+  --no-flip-y              Disable Y-axis flip
   --analyze-only           Print compatibility analysis, don't convert
   --force                  Convert Tier 4 shaders with degradation
   -v, --verbose            Detailed transformation log
@@ -49,7 +50,7 @@ function parseArgs(argv: string[]): ParsedArgs {
   const result: ParsedArgs = {
     useStdin: false,
     blendMode: 'overlay',
-    flipY: false,
+    flipY: true,
     analyzeOnly: false,
     force: false,
     verbose: false,
@@ -128,6 +129,10 @@ function parseArgs(argv: string[]): ParsedArgs {
 
       case '--flip-y':
         result.flipY = true;
+        break;
+
+      case '--no-flip-y':
+        result.flipY = false;
         break;
 
       case '--analyze-only':
