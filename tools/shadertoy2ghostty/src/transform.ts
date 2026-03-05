@@ -9,6 +9,7 @@ import { analyzeChannels, replaceChannelTextures } from './channels.js';
 import { buildPassGraph, sortPasses, inlineBuffers } from './passes.js';
 import { attributionHeader, proceduralNoiseGLSL, blendingCode } from './templates.js';
 import { stubMissingUniforms, replaceFragCoord, injectFlipY } from './uniforms.js';
+import { validateStructural, validateAST, validateWithGlslang } from './validate.js';
 import { CompatibilityTier as Tier } from './types.js';
 
 /**
@@ -44,10 +45,10 @@ export function analyzeShader(
 /**
  * Convert a Shadertoy shader to Ghostty-compatible GLSL.
  */
-export function convertShader(
+export async function convertShader(
   shader: ShadertoyApiResponse,
   options: ConversionOptions,
-): ConversionResult {
+): Promise<ConversionResult> {
   const info = shader.Shader.info;
   const renderpasses = shader.Shader.renderpass;
   const allDiagnostics: DiagnosticMessage[] = [];
@@ -209,8 +210,23 @@ export function convertShader(
   // Main shader code (includes inlined buffer functions if any, uniform stubs, etc.)
   parts.push(mainCode);
 
+  const glsl = parts.join('\n');
+
+  // 11. Validate output
+  // Tier 1: structural (always)
+  allDiagnostics.push(...validateStructural(glsl));
+
+  // Tier 2: AST parse (always)
+  allDiagnostics.push(...validateAST(glsl));
+
+  // Tier 3: glslangValidator (opt-in)
+  if (options.validate) {
+    const glslangDiags = await validateWithGlslang(glsl);
+    allDiagnostics.push(...glslangDiags);
+  }
+
   return {
-    glsl: parts.join('\n'),
+    glsl,
     tier,
     diagnostics: allDiagnostics,
     shaderName,

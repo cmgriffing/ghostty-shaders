@@ -26,6 +26,7 @@ Options:
   --no-flip-y              Disable Y-axis flip
   --analyze-only           Print compatibility analysis, don't convert
   --force                  Convert Tier 4 shaders with degradation
+  --validate               Run full GLSL validation via glslangValidator
   -v, --verbose            Detailed transformation log
   -h, --help               Show help text
 `.trim();
@@ -42,6 +43,7 @@ interface ParsedArgs {
   analyzeOnly: boolean;
   force: boolean;
   verbose: boolean;
+  validate: boolean;
   shaderInput?: string;
 }
 
@@ -54,6 +56,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     analyzeOnly: false,
     force: false,
     verbose: false,
+    validate: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -141,6 +144,10 @@ function parseArgs(argv: string[]): ParsedArgs {
 
       case '--force':
         result.force = true;
+        break;
+
+      case '--validate':
+        result.validate = true;
         break;
 
       case '-v':
@@ -310,9 +317,10 @@ async function main() {
     force: parsed.force,
     verbose: parsed.verbose,
     analyzeOnly: false,
+    validate: parsed.validate,
   };
 
-  const result = convertShader(shaderData, options);
+  const result = await convertShader(shaderData, options);
 
   // Print diagnostics to stderr
   if (result.diagnostics.length > 0) {

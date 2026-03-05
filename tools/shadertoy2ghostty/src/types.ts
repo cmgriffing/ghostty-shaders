@@ -87,6 +87,7 @@ export interface ConversionOptions {
   force: boolean;
   verbose: boolean;
   analyzeOnly: boolean;
+  validate: boolean;
 }
 
 export interface DiagnosticMessage {

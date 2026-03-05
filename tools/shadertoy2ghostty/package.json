@@ -7,8 +7,12 @@
     "convert": "tsx src/index.ts"
   },
   "devDependencies": {
-    "typescript": "^5.4",
+    "@types/node": "^20",
     "tsx": "^4.7",
-    "@types/node": "^20"
+    "typescript": "^5.4"
+  },
+  "dependencies": {
+    "glsl-parser": "^2.0.1",
+    "glsl-tokenizer": "^2.1.5"
   }
 }
