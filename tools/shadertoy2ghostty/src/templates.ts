@@ -60,8 +60,12 @@ export function blendingCode(mode: BlendMode, flipY: boolean): string {
     // --- Terminal blending (overlay) ---
     vec2 _termUV = ${termUvExpr};
     vec4 _terminalColor = texture(iChannel0, _termUV);
-    float _mask = 1.0 - step(0.5, dot(_terminalColor.rgb, vec3(1.0)));
-    vec3 _blendedColor = mix(_terminalColor.rgb, fragColor.rgb, _mask);
+    // Smooth luminance mask avoids terminal-only output on dark-gray backgrounds.
+    float _terminalLuma = dot(_terminalColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    float _backgroundMask = 1.0 - smoothstep(0.18, 0.72, _terminalLuma);
+    // Keep a small floor so shader contribution remains visible across common themes.
+    float _shaderWeight = 0.08 + (0.42 * _backgroundMask);
+    vec3 _blendedColor = mix(_terminalColor.rgb, fragColor.rgb, _shaderWeight);
     fragColor = vec4(_blendedColor, _terminalColor.a);`;
 
     case "additive":
