@@ -8,9 +8,84 @@ import type {
 import { analyzeChannels, replaceChannelTextures } from './channels.js';
 import { buildPassGraph, sortPasses, inlineBuffers } from './passes.js';
 import { attributionHeader, proceduralNoiseGLSL, blendingCode } from './templates.js';
-import { stubMissingUniforms, replaceFragCoord, injectFlipY } from './uniforms.js';
+import {
+  normalizeMainImageEntryPoint,
+  stubMissingUniforms,
+  replaceFragCoord,
+  injectFlipY,
+} from './uniforms.js';
 import { validateStructural, validateAST, validateWithGlslang } from './validate.js';
 import { CompatibilityTier as Tier } from './types.js';
+
+function findMainImageClosingBrace(source: string): number {
+  const mainImageMatch = /void\s+mainImage\s*\([^)]*\)\s*\{/.exec(source);
+  if (!mainImageMatch || mainImageMatch.index === undefined) {
+    return -1;
+  }
+
+  const openBraceIndex = mainImageMatch.index + mainImageMatch[0].length - 1;
+  let depth = 0;
+  let inLineComment = false;
+  let inBlockComment = false;
+  let inString: '"' | "'" | null = null;
+
+  for (let i = openBraceIndex; i < source.length; i++) {
+    const ch = source[i];
+    const next = source[i + 1];
+
+    if (inLineComment) {
+      if (ch === '\n') inLineComment = false;
+      continue;
+    }
+
+    if (inBlockComment) {
+      if (ch === '*' && next === '/') {
+        inBlockComment = false;
+        i++;
+      }
+      continue;
+    }
+
+    if (inString !== null) {
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
+      if (ch === inString) {
+        inString = null;
+      }
+      continue;
+    }
+
+    if (ch === '/' && next === '/') {
+      inLineComment = true;
+      i++;
+      continue;
+    }
+    if (ch === '/' && next === '*') {
+      inBlockComment = true;
+      i++;
+      continue;
+    }
+    if (ch === '"' || ch === '\'') {
+      inString = ch;
+      continue;
+    }
+
+    if (ch === '{') {
+      depth++;
+      continue;
+    }
+    if (ch === '}') {
+      depth--;
+      if (depth === 0) {
+        return i;
+      }
+    }
+  }
+
+  return -1;
+}
 
 /**
  * Analyze a Shadertoy shader for Ghostty compatibility without converting it.
@@ -144,12 +219,17 @@ export async function convertShader(
   mainCode = channelResult.code;
   let needsNoise = channelResult.needsNoise;
 
-  // 6. Stub missing uniforms
+  // 6. Normalize local main() entrypoint to mainImage(...)
+  const normalizedEntryPointResult = normalizeMainImageEntryPoint(mainCode);
+  mainCode = normalizedEntryPointResult.code;
+  allDiagnostics.push(...normalizedEntryPointResult.diagnostics);
+
+  // 7. Stub missing uniforms
   const uniformResult = stubMissingUniforms(mainCode);
   mainCode = uniformResult.code;
   allDiagnostics.push(...uniformResult.diagnostics);
 
-  // 7. Replace gl_FragCoord
+  // 8. Replace gl_FragCoord
   const fragCoordResult = replaceFragCoord(mainCode);
   mainCode = fragCoordResult.code;
   if (fragCoordResult.replaced) {
@@ -160,7 +240,7 @@ export async function convertShader(
     });
   }
 
-  // 8. Y-axis flip
+  // 9. Y-axis flip
   if (options.flipY) {
     mainCode = injectFlipY(mainCode);
     allDiagnostics.push({
@@ -170,24 +250,34 @@ export async function convertShader(
     });
   }
 
-  // 9. Inject terminal blending
+  // 10. Inject terminal blending
   if (options.blendMode !== 'replace') {
-    const blend = blendingCode(options.blendMode);
+    const blend = blendingCode(options.blendMode, options.flipY);
     if (blend) {
-      // Inject blending code before the closing brace of mainImage
-      const lastBrace = mainCode.lastIndexOf('}');
-      if (lastBrace !== -1) {
-        mainCode = mainCode.slice(0, lastBrace) + blend + '\n' + mainCode.slice(lastBrace);
+      // Inject blending code before the closing brace of mainImage's body.
+      const mainImageClosingBrace = findMainImageClosingBrace(mainCode);
+      if (mainImageClosingBrace !== -1) {
+        mainCode =
+          mainCode.slice(0, mainImageClosingBrace)
+          + blend
+          + '\n'
+          + mainCode.slice(mainImageClosingBrace);
+        allDiagnostics.push({
+          severity: 'info',
+          category: 'general',
+          message: `Injected terminal blending (${options.blendMode} mode).`,
+        });
+      } else {
+        allDiagnostics.push({
+          severity: 'warning',
+          category: 'general',
+          message: `Skipped terminal blending (${options.blendMode} mode): could not locate mainImage body.`,
+        });
       }
-      allDiagnostics.push({
-        severity: 'info',
-        category: 'general',
-        message: `Injected terminal blending (${options.blendMode} mode).`,
-      });
     }
   }
 
-  // 10. Build final output
+  // 11. Build final output
   const parts: string[] = [];
 
   // Attribution header
@@ -212,7 +302,7 @@ export async function convertShader(
 
   const glsl = parts.join('\n');
 
-  // 11. Validate output
+  // 12. Validate output
   // Tier 1: structural (always)
   allDiagnostics.push(...validateStructural(glsl));
 

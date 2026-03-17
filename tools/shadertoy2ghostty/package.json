@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "convert": "tsx src/index.ts"
+    "convert": "tsx src/index.ts",
+    "verify:ghostty-blend": "tsx src/verify-ghostty-blend-regression.ts",
+    "verify:local-main": "tsx src/verify-local-main.ts"
   },
   "devDependencies": {
     "@types/node": "^20",
