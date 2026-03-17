@@ -62,14 +62,26 @@ function wrapRawGlsl(code: string, name: string): ShadertoyApiResponse {
 }
 
 function getMainImageBody(glsl: string): string {
-  const signature =
-    /void\s+mainImage\s*\(\s*out\s+vec4\s+\w+\s*,\s*in\s+vec2\s+\w+\s*\)\s*\{/m;
+  const { bodyStart, bodyEnd } = findFunctionBodyBounds(
+    glsl,
+    /void\s+mainImage\s*\(\s*out\s+vec4\s+\w+\s*,\s*in\s+vec2\s+\w+\s*\)\s*\{/m,
+    'mainImage',
+  );
+  return glsl.slice(bodyStart, bodyEnd);
+}
+
+function findFunctionBodyBounds(
+  glsl: string,
+  signature: RegExp,
+  label: string,
+): { bodyStart: number; bodyEnd: number } {
   const match = signature.exec(glsl);
-  if (!match) {
-    throw new Error('mainImage signature not found in converted output.');
+  if (!match || match.index === undefined) {
+    throw new Error(`${label} signature not found in converted output.`);
   }
 
-  const bodyStart = match.index + match[0].length;
+  const openBraceIndex = match.index + match[0].length - 1;
+  const bodyStart = openBraceIndex + 1;
   let depth = 1;
 
   for (let i = bodyStart; i < glsl.length; i++) {
@@ -77,11 +89,11 @@ function getMainImageBody(glsl: string): string {
     if (char === '{') depth++;
     if (char === '}') depth--;
     if (depth === 0) {
-      return glsl.slice(bodyStart, i);
+      return { bodyStart, bodyEnd: i };
     }
   }
 
-  throw new Error('Unable to parse mainImage body (unbalanced braces).');
+  throw new Error(`Unable to parse ${label} body (unbalanced braces).`);
 }
 
 function assertGhosttyBlendPlacement(glsl: string, context: string): void {
@@ -126,6 +138,40 @@ function moveOverlayBlendOutsideMainImage(glsl: string): string {
   return `${withoutBlend}\n${match[0]}\n`;
 }
 
+function moveOverlayBlendIntoTrailingHelper(glsl: string): string {
+  const match = glsl.match(OVERLAY_BLOCK_PATTERN);
+  if (!match) {
+    throw new Error('Unable to move blend block into helper: overlay block not found.');
+  }
+
+  const withoutBlend = glsl.replace(OVERLAY_BLOCK_PATTERN, '');
+  const { bodyEnd } = findFunctionBodyBounds(
+    withoutBlend,
+    /float\s+helperPulse\s*\(\s*vec2\s+\w+\s*\)\s*\{/m,
+    'helperPulse',
+  );
+
+  const inserted =
+    withoutBlend.slice(0, bodyEnd)
+    + `\n${match[0]}\n`
+    + withoutBlend.slice(bodyEnd);
+
+  const helperBody = (() => {
+    const bounds = findFunctionBodyBounds(
+      inserted,
+      /float\s+helperPulse\s*\(\s*vec2\s+\w+\s*\)\s*\{/m,
+      'helperPulse',
+    );
+    return inserted.slice(bounds.bodyStart, bounds.bodyEnd);
+  })();
+
+  if (!helperBody.includes(OVERLAY_MARKER)) {
+    throw new Error('Failed to inject overlay block into helperPulse.');
+  }
+
+  return inserted;
+}
+
 function expectVerifierFailure(glsl: string, context: string): void {
   let threw = false;
   try {
@@ -168,8 +214,17 @@ async function main(): Promise<void> {
   console.log('PASS negative: missing blend fails verification');
 
   const misplacedBlend = moveOverlayBlendOutsideMainImage(baseline);
-  expectVerifierFailure(misplacedBlend, 'misplaced-overlay-blend');
-  console.log('PASS negative: misplaced blend fails verification');
+  expectVerifierFailure(misplacedBlend, 'misplaced-overlay-blend-outside-mainimage');
+  console.log('PASS negative: blend moved outside mainImage fails verification');
+
+  const trailingHelperBaseline = converted.get('main-image-trailing-helper');
+  if (!trailingHelperBaseline) {
+    throw new Error('main-image-trailing-helper baseline conversion missing.');
+  }
+
+  const helperInjectedBlend = moveOverlayBlendIntoTrailingHelper(trailingHelperBaseline);
+  expectVerifierFailure(helperInjectedBlend, 'misplaced-overlay-blend-in-trailing-helper');
+  console.log('PASS negative: blend injected into trailing helper fails verification');
 
   console.log('Ghostty blend regression verification passed.');
 }
