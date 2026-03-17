@@ -124,6 +124,47 @@ export function stubMissingUniforms(source: string): { code: string; diagnostics
 }
 
 /**
+ * Normalizes local shaders that provide `main()` into a Shadertoy-style
+ * `mainImage(out vec4 fragColor, in vec2 fragCoord)` entrypoint.
+ */
+export function normalizeMainImageEntryPoint(
+  source: string,
+): { code: string; diagnostics: DiagnosticMessage[] } {
+  const diagnostics: DiagnosticMessage[] = [];
+
+  if (/\bvoid\s+mainImage\s*\(/.test(source)) {
+    return { code: source, diagnostics };
+  }
+
+  const mainPattern = /\bvoid\s+main\s*\(\s*(?:void\s*)?\)/;
+  if (!mainPattern.test(source)) {
+    return { code: source, diagnostics };
+  }
+
+  let code = source.replace(
+    mainPattern,
+    'void mainImage(out vec4 fragColor, in vec2 fragCoord)',
+  );
+
+  if (/\bgl_FragColor\b/.test(code)) {
+    code = code.replace(/\bgl_FragColor\b/g, 'fragColor');
+    diagnostics.push({
+      severity: 'info',
+      category: 'general',
+      message: 'Replaced gl_FragColor with fragColor while normalizing local main() input.',
+    });
+  }
+
+  diagnostics.push({
+    severity: 'info',
+    category: 'general',
+    message: 'Normalized local main() entrypoint to mainImage(out vec4 fragColor, in vec2 fragCoord).',
+  });
+
+  return { code, diagnostics };
+}
+
+/**
  * Replaces `gl_FragCoord` with `fragCoord` throughout the source.
  * Some Shadertoy shaders use the raw builtin instead of the mainImage parameter.
  */
