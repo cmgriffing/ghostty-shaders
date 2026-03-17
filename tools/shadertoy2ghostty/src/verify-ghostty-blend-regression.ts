@@ -6,9 +6,11 @@ import type { ConversionOptions, ShadertoyApiResponse } from './types.js';
 
 const OVERLAY_MARKER = '// --- Terminal blending (overlay) ---';
 const OVERLAY_SAMPLE = 'texture(iChannel0, _termUV)';
-const OVERLAY_ASSIGNMENT = 'fragColor = vec4(_blendedColor, _terminalColor.a);';
+const FLIP_Y_STATEMENT_PATTERN = /fragCoord\.y\s*=\s*iResolution\.y\s*-\s*fragCoord\.y\s*;/;
+const TERM_UV_ASSIGNMENT_PATTERN = /vec2\s+_termUV\s*=\s*([^;]+);/;
+const Y_COMPENSATION_PATTERN = /iResolution\.y\s*-\s*fragCoord\.y/;
 const OVERLAY_BLOCK_PATTERN =
-  /[ \t]*\/\/ --- Terminal blending \(overlay\) ---[\s\S]*?fragColor = vec4\(_blendedColor, _terminalColor\.a\);/m;
+  /[ \t]*\/\/ --- Terminal blending \(overlay\) ---[\s\S]*?fragColor\s*=\s*vec4\([^;]+\)\s*;/m;
 
 interface Fixture {
   name: string;
@@ -108,16 +110,298 @@ function assertGhosttyBlendPlacement(glsl: string, context: string): void {
     throw new Error(`${context}: iChannel0 sampling missing from blend block.`);
   }
 
-  const assignmentIndex = body.indexOf(OVERLAY_ASSIGNMENT, markerIndex);
-  if (assignmentIndex === -1) {
-    throw new Error(`${context}: final blended fragColor assignment missing.`);
-  }
+  const overlayBlock = getOverlayBlock(body, context);
+  const assignmentIndex = body.indexOf(overlayBlock, markerIndex);
 
   const trailingCode = body
-    .slice(assignmentIndex + OVERLAY_ASSIGNMENT.length)
+    .slice(assignmentIndex + overlayBlock.length)
     .trim();
   if (trailingCode.length > 0) {
     throw new Error(`${context}: blend assignment is not at end of mainImage body.`);
+  }
+
+  assertTerminalLayerOrientation(body, context);
+  assertFinalCompositionVisibility(overlayBlock, context);
+}
+
+function getOverlayBlock(mainImageBody: string, context: string): string {
+  const match = mainImageBody.match(OVERLAY_BLOCK_PATTERN);
+  if (!match) {
+    throw new Error(`${context}: overlay blend block not found in mainImage body.`);
+  }
+
+  return match[0];
+}
+
+function findLineIndex(lines: string[], pattern: RegExp, startIndex = 0): number {
+  for (let i = startIndex; i < lines.length; i++) {
+    if (pattern.test(lines[i])) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function findNearestVec2Assignment(
+  lines: string[],
+  variableName: string,
+  beforeLineIndex: number,
+): { expression: string; lineIndex: number } | null {
+  const pattern = new RegExp(`\\bvec2\\s+${escapeRegExp(variableName)}\\s*=\\s*([^;]+);`);
+  for (let i = beforeLineIndex - 1; i >= 0; i--) {
+    const match = lines[i].match(pattern);
+    if (match) {
+      return { expression: match[1], lineIndex: i };
+    }
+  }
+  return null;
+}
+
+function classifyTermUvExpression(
+  expression: string,
+  expressionLineIndex: number,
+  lines: string[],
+  flipLineIndex: number,
+  visited = new Set<string>(),
+  depth = 0,
+): 'unflipped' | 'flipped' | 'unknown' {
+  if (depth > 5) {
+    return 'unknown';
+  }
+
+  const normalized = expression.replace(/\s+/g, ' ').trim();
+
+  if (Y_COMPENSATION_PATTERN.test(normalized)) {
+    return 'unflipped';
+  }
+
+  if (
+    /fragCoord\.xy\s*\/\s*iResolution\.xy/.test(normalized)
+    || /vec2\s*\(\s*fragCoord\.x\s*,\s*fragCoord\.y\s*\)\s*\/\s*iResolution\.xy/.test(normalized)
+  ) {
+    if (flipLineIndex !== -1 && flipLineIndex < expressionLineIndex) {
+      return 'flipped';
+    }
+    return 'unflipped';
+  }
+
+  const variableReferenceMatch = normalized.match(
+    /^([A-Za-z_][A-Za-z0-9_]*)(?:\.xy)?(?:\s*\/\s*iResolution\.xy)?$/,
+  );
+  if (!variableReferenceMatch) {
+    return 'unknown';
+  }
+
+  const variableName = variableReferenceMatch[1];
+  if (visited.has(variableName)) {
+    return 'unknown';
+  }
+  visited.add(variableName);
+
+  const assignment = findNearestVec2Assignment(lines, variableName, expressionLineIndex);
+  if (!assignment) {
+    return 'unknown';
+  }
+
+  return classifyTermUvExpression(
+    assignment.expression,
+    assignment.lineIndex,
+    lines,
+    flipLineIndex,
+    visited,
+    depth + 1,
+  );
+}
+
+function assertTerminalLayerOrientation(mainImageBody: string, context: string): void {
+  const lines = mainImageBody.split(/\r?\n/);
+  const markerLineIndex = findLineIndex(lines, /\/\/ --- Terminal blending \(overlay\) ---/);
+  if (markerLineIndex === -1) {
+    throw new Error(`${context}: overlay marker line missing.`);
+  }
+
+  const termUvLineIndex = findLineIndex(lines, TERM_UV_ASSIGNMENT_PATTERN, markerLineIndex);
+  if (termUvLineIndex === -1) {
+    throw new Error(`${context}: _termUV assignment missing from overlay block.`);
+  }
+
+  const termUvMatch = lines[termUvLineIndex].match(TERM_UV_ASSIGNMENT_PATTERN);
+  if (!termUvMatch) {
+    throw new Error(`${context}: unable to parse _termUV assignment.`);
+  }
+
+  const flipLineIndex = findLineIndex(lines, FLIP_Y_STATEMENT_PATTERN);
+  if (flipLineIndex === -1) {
+    throw new Error(`${context}: expected flip-Y statement in mainImage body.`);
+  }
+
+  const classification = classifyTermUvExpression(
+    termUvMatch[1],
+    termUvLineIndex,
+    lines,
+    flipLineIndex,
+  );
+
+  if (classification === 'flipped') {
+    throw new Error(`${context}: terminal sampling uses flipped coordinates (inverted terminal layer).`);
+  }
+
+  if (classification === 'unknown') {
+    throw new Error(`${context}: unable to verify terminal sampling orientation.`);
+  }
+}
+
+interface Assignment {
+  name: string;
+  expression: string;
+  lineIndex: number;
+}
+
+function parseAssignments(lines: string[], beforeLineIndex: number): Assignment[] {
+  const assignments: Assignment[] = [];
+  const assignmentPattern = /\b(?:float|vec2|vec3|vec4)\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*([^;]+);/;
+
+  for (let i = 0; i < beforeLineIndex; i++) {
+    const match = lines[i].match(assignmentPattern);
+    if (match) {
+      assignments.push({
+        name: match[1],
+        expression: match[2],
+        lineIndex: i,
+      });
+    }
+  }
+
+  return assignments;
+}
+
+function findLatestAssignment(
+  assignments: Assignment[],
+  variableName: string,
+  beforeLineIndex: number,
+): Assignment | null {
+  for (let i = assignments.length - 1; i >= 0; i--) {
+    const assignment = assignments[i];
+    if (assignment.name === variableName && assignment.lineIndex < beforeLineIndex) {
+      return assignment;
+    }
+  }
+  return null;
+}
+
+function expandExpression(
+  expression: string,
+  assignments: Assignment[],
+  beforeLineIndex: number,
+  depth = 0,
+  resolving = new Set<string>(),
+): string {
+  if (depth > 6) {
+    return expression;
+  }
+
+  return expression.replace(/\b([A-Za-z_][A-Za-z0-9_]*)\b/g, (token, variableName) => {
+    const assignment = findLatestAssignment(assignments, variableName, beforeLineIndex);
+    if (!assignment) {
+      return token;
+    }
+
+    const key = `${variableName}:${assignment.lineIndex}`;
+    if (resolving.has(key)) {
+      return token;
+    }
+
+    resolving.add(key);
+    const expanded = expandExpression(
+      assignment.expression,
+      assignments,
+      assignment.lineIndex,
+      depth + 1,
+      resolving,
+    );
+    resolving.delete(key);
+
+    return `(${expanded})`;
+  });
+}
+
+function splitTopLevelArguments(args: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+
+  for (let i = 0; i < args.length; i++) {
+    const char = args[i];
+    if (char === '(') depth++;
+    if (char === ')') depth--;
+    if (char === ',' && depth === 0) {
+      parts.push(args.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+
+  parts.push(args.slice(start).trim());
+  return parts.filter((part) => part.length > 0);
+}
+
+function extractFinalVec4Args(overlayBlock: string, context: string): { rgb: string; alpha: string; lineIndex: number } {
+  const lines = overlayBlock.split(/\r?\n/);
+  let finalLineIndex = -1;
+  let finalLine = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    if (/fragColor\s*=\s*vec4\s*\(/.test(lines[i])) {
+      finalLineIndex = i;
+      finalLine = lines[i];
+    }
+  }
+
+  if (finalLineIndex === -1) {
+    throw new Error(`${context}: final vec4 assignment missing from overlay block.`);
+  }
+
+  const argsMatch = finalLine.match(/fragColor\s*=\s*vec4\s*\(([^;]+)\)\s*;/);
+  if (!argsMatch) {
+    throw new Error(`${context}: unable to parse final vec4 assignment.`);
+  }
+
+  const args = splitTopLevelArguments(argsMatch[1]);
+  if (args.length === 2) {
+    return { rgb: args[0], alpha: args[1], lineIndex: finalLineIndex };
+  }
+  if (args.length === 4) {
+    return {
+      rgb: `${args[0]}, ${args[1]}, ${args[2]}`,
+      alpha: args[3],
+      lineIndex: finalLineIndex,
+    };
+  }
+
+  throw new Error(`${context}: unsupported vec4 argument shape in final assignment.`);
+}
+
+function assertFinalCompositionVisibility(overlayBlock: string, context: string): void {
+  const lines = overlayBlock.split(/\r?\n/);
+  const finalArgs = extractFinalVec4Args(overlayBlock, context);
+  const assignments = parseAssignments(lines, finalArgs.lineIndex + 1);
+
+  const expandedRgb = expandExpression(finalArgs.rgb, assignments, finalArgs.lineIndex + 1);
+  const expandedAlpha = expandExpression(finalArgs.alpha, assignments, finalArgs.lineIndex + 1);
+
+  const hasTerminalContribution = /_terminalColor\.rgb/.test(expandedRgb);
+  const hasShaderContribution = /\bfragColor\.rgb\b/.test(expandedRgb);
+  if (!hasTerminalContribution || !hasShaderContribution) {
+    throw new Error(
+      `${context}: final composition must preserve both terminal RGB and shader RGB contributions.`,
+    );
+  }
+
+  if (!/_terminalColor\.a/.test(expandedAlpha)) {
+    throw new Error(`${context}: final composition must preserve terminal alpha for readability.`);
   }
 }
 
@@ -170,6 +454,33 @@ function moveOverlayBlendIntoTrailingHelper(glsl: string): string {
   }
 
   return inserted;
+}
+
+function forceInvertedTerminalSampling(glsl: string): string {
+  const termUvPattern = /vec2\s+_termUV\s*=\s*[^;]+;/;
+  if (!termUvPattern.test(glsl)) {
+    throw new Error('Unable to force inversion: _termUV assignment not found.');
+  }
+
+  return glsl.replace(termUvPattern, 'vec2 _termUV = fragCoord.xy / iResolution.xy;');
+}
+
+function forceHiddenShaderContribution(glsl: string): string {
+  const blendedPattern = /vec3\s+_blendedColor\s*=\s*[^;]+;/;
+  if (!blendedPattern.test(glsl)) {
+    throw new Error('Unable to hide shader contribution: _blendedColor assignment not found.');
+  }
+
+  return glsl.replace(blendedPattern, 'vec3 _blendedColor = _terminalColor.rgb;');
+}
+
+function forceHiddenTerminalContribution(glsl: string): string {
+  const blendedPattern = /vec3\s+_blendedColor\s*=\s*[^;]+;/;
+  if (!blendedPattern.test(glsl)) {
+    throw new Error('Unable to hide terminal contribution: _blendedColor assignment not found.');
+  }
+
+  return glsl.replace(blendedPattern, 'vec3 _blendedColor = fragColor.rgb;');
 }
 
 function expectVerifierFailure(glsl: string, context: string): void {
@@ -225,6 +536,18 @@ async function main(): Promise<void> {
   const helperInjectedBlend = moveOverlayBlendIntoTrailingHelper(trailingHelperBaseline);
   expectVerifierFailure(helperInjectedBlend, 'misplaced-overlay-blend-in-trailing-helper');
   console.log('PASS negative: blend injected into trailing helper fails verification');
+
+  const invertedSampling = forceInvertedTerminalSampling(baseline);
+  expectVerifierFailure(invertedSampling, 'inverted-terminal-sampling');
+  console.log('PASS negative: inverted terminal sampling fails verification');
+
+  const shaderHidden = forceHiddenShaderContribution(baseline);
+  expectVerifierFailure(shaderHidden, 'shader-contribution-hidden');
+  console.log('PASS negative: hidden shader contribution fails verification');
+
+  const terminalHidden = forceHiddenTerminalContribution(baseline);
+  expectVerifierFailure(terminalHidden, 'terminal-contribution-hidden');
+  console.log('PASS negative: hidden terminal contribution fails verification');
 
   console.log('Ghostty blend regression verification passed.');
 }
