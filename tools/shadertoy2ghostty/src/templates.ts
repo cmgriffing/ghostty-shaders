@@ -46,7 +46,11 @@ vec4 proceduralNoise(vec2 uv) {
 `;
 }
 
-export function blendingCode(mode: BlendMode): string {
+export function blendingCode(mode: BlendMode, flipY: boolean): string {
+  const termUvExpr = flipY
+    ? 'vec2(fragCoord.x, iResolution.y - fragCoord.y) / iResolution.xy'
+    : 'fragCoord.xy / iResolution.xy';
+
   switch (mode) {
     case "replace":
       return "";
@@ -54,7 +58,7 @@ export function blendingCode(mode: BlendMode): string {
     case "overlay":
       return `
     // --- Terminal blending (overlay) ---
-    vec2 _termUV = fragCoord.xy / iResolution.xy;
+    vec2 _termUV = ${termUvExpr};
     vec4 _terminalColor = texture(iChannel0, _termUV);
     float _mask = 1.0 - step(0.5, dot(_terminalColor.rgb, vec3(1.0)));
     vec3 _blendedColor = mix(_terminalColor.rgb, fragColor.rgb, _mask);
@@ -63,14 +67,14 @@ export function blendingCode(mode: BlendMode): string {
     case "additive":
       return `
     // --- Terminal blending (additive) ---
-    vec2 _termUV = fragCoord.xy / iResolution.xy;
+    vec2 _termUV = ${termUvExpr};
     vec4 _terminalColor = texture(iChannel0, _termUV);
     fragColor = vec4(_terminalColor.rgb + fragColor.rgb, _terminalColor.a);`;
 
     case "multiply":
       return `
     // --- Terminal blending (multiply) ---
-    vec2 _termUV = fragCoord.xy / iResolution.xy;
+    vec2 _termUV = ${termUvExpr};
     vec4 _terminalColor = texture(iChannel0, _termUV);
     fragColor = vec4(_terminalColor.rgb * fragColor.rgb, _terminalColor.a);`;
   }

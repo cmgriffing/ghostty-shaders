@@ -252,7 +252,7 @@ export async function convertShader(
 
   // 10. Inject terminal blending
   if (options.blendMode !== 'replace') {
-    const blend = blendingCode(options.blendMode);
+    const blend = blendingCode(options.blendMode, options.flipY);
     if (blend) {
       // Inject blending code before the closing brace of mainImage's body.
       const mainImageClosingBrace = findMainImageClosingBrace(mainCode);
