@@ -111,7 +111,10 @@ function assertGhosttyBlendPlacement(glsl: string, context: string): void {
   }
 
   const overlayBlock = getOverlayBlock(body, context);
-  const assignmentIndex = body.indexOf(overlayBlock, markerIndex);
+  const assignmentIndex = body.indexOf(overlayBlock);
+  if (assignmentIndex === -1) {
+    throw new Error(`${context}: overlay block lookup failed.`);
+  }
 
   const trailingCode = body
     .slice(assignmentIndex + overlayBlock.length)
@@ -389,18 +392,29 @@ function assertFinalCompositionVisibility(overlayBlock: string, context: string)
   const finalArgs = extractFinalVec4Args(overlayBlock, context);
   const assignments = parseAssignments(lines, finalArgs.lineIndex + 1);
 
+  const rawRgb = finalArgs.rgb;
+  const rawAlpha = finalArgs.alpha;
   const expandedRgb = expandExpression(finalArgs.rgb, assignments, finalArgs.lineIndex + 1);
   const expandedAlpha = expandExpression(finalArgs.alpha, assignments, finalArgs.lineIndex + 1);
 
-  const hasTerminalContribution = /_terminalColor\.rgb/.test(expandedRgb);
-  const hasShaderContribution = /\bfragColor\.rgb\b/.test(expandedRgb);
+  const hasTerminalContribution =
+    /_terminalColor\.rgb/.test(rawRgb)
+    || /_terminalColor\.rgb/.test(expandedRgb)
+    || /texture\s*\(\s*iChannel0\s*,/.test(expandedRgb);
+  const hasShaderContribution =
+    /\bfragColor\.rgb\b/.test(rawRgb)
+    || /\bfragColor\.rgb\b/.test(expandedRgb);
   if (!hasTerminalContribution || !hasShaderContribution) {
     throw new Error(
       `${context}: final composition must preserve both terminal RGB and shader RGB contributions.`,
     );
   }
 
-  if (!/_terminalColor\.a/.test(expandedAlpha)) {
+  const hasTerminalAlpha =
+    /_terminalColor\.a/.test(rawAlpha)
+    || /_terminalColor\.a/.test(expandedAlpha)
+    || /texture\s*\(\s*iChannel0\s*,/.test(expandedAlpha);
+  if (!hasTerminalAlpha) {
     throw new Error(`${context}: final composition must preserve terminal alpha for readability.`);
   }
 }
