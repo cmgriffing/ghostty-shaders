@@ -11,6 +11,11 @@ interface UniformStub {
 
 const UNIFORM_STUBS: UniformStub[] = [
   {
+    pattern: /\btime\s*\(\s*\)/,
+    glsl: '#define time() mod(iTime, 3600.0)',
+    message: 'Defined time() function with modulo to prevent precision issues',
+  },
+  {
     pattern: /\biTimeDelta\b/,
     glsl: '#define iTimeDelta 0.016',
     message: 'Stubbed iTimeDelta as 0.016 (~60fps)',
@@ -22,7 +27,7 @@ const UNIFORM_STUBS: UniformStub[] = [
   },
   {
     pattern: /\biDate\b/,
-    glsl: '#define iDate vec4(2024.0, 0.0, 0.0, iTime)',
+    glsl: '#define iDate vec4(2024.0, 0.0, 0.0, time())',
     message: 'Stubbed iDate with approximate values',
   },
   {
@@ -32,8 +37,8 @@ const UNIFORM_STUBS: UniformStub[] = [
   },
   {
     pattern: /\biFrame\b/,
-    glsl: '#define iFrame int(iTime * 60.0)',
-    message: 'Stubbed iFrame as int(iTime * 60.0)',
+    glsl: '#define iFrame int(time() * 60.0)',
+    message: 'Stubbed iFrame as int(time() * 60.0)',
   },
 ];
 
@@ -73,11 +78,11 @@ export function stubMissingUniforms(source: string): { code: string; diagnostics
 
   // Step 1: Replace array uniforms inline (can't be #define'd as arrays)
   if (/\biChannelTime\b/.test(code)) {
-    code = code.replace(/\biChannelTime\s*\[\s*\d+\s*\]/g, 'iTime');
+    code = code.replace(/\biChannelTime\s*\[\s*\d+\s*\]/g, 'time()');
     diagnostics.push({
       severity: 'info',
       category: 'uniform',
-      message: 'Replaced iChannelTime[N] with iTime',
+      message: 'Replaced iChannelTime[N] with time()',
     });
   }
 
@@ -90,7 +95,17 @@ export function stubMissingUniforms(source: string): { code: string; diagnostics
     });
   }
 
-  // Step 2: Apply iMouse shim via direct swizzle replacement
+  // Step 2: Replace iTime with time() for precision stability
+  if (/\biTime\b/.test(code)) {
+    code = code.replace(/\biTime\b/g, 'time()');
+    diagnostics.push({
+      severity: 'info',
+      category: 'uniform',
+      message: 'Replaced iTime with time() for precision stability',
+    });
+  }
+
+  // Step 3: Apply iMouse shim via direct swizzle replacement
   if (/\biMouse\b/.test(code) && needsMouseShim(code)) {
     code = applyMouseShim(code);
     diagnostics.push({
