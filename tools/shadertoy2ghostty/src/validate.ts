@@ -139,7 +139,7 @@ export function validateStructural(glsl: string): DiagnosticMessage[] {
   }
 
   // Check for empty mainImage body
-  const mainImageBody = glsl.match(/void\s+mainImage\s*\([^)]*\)\s*\{([\s\S]*)\}/);
+  const mainImageBody = glsl.match(/void\s+mainImage\s*\([^)]*\)\s*\{([\s\S]*?)\}/);
   if (mainImageBody && mainImageBody[1].trim() === '') {
     diagnostics.push({
       severity: 'error',
