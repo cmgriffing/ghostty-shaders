@@ -23,9 +23,39 @@ export function validateStructural(glsl: string): DiagnosticMessage[] {
     });
   }
 
-  // Check balanced braces
+  // Check balanced braces (comment-aware)
   let braceDepth = 0;
-  for (const ch of glsl) {
+  let inSingleLineComment = false;
+  let inMultiLineComment = false;
+  for (let i = 0; i < glsl.length; i++) {
+    const ch = glsl[i];
+    const nextCh = glsl[i + 1];
+
+    if (inSingleLineComment) {
+      if (ch === '\n') {
+        inSingleLineComment = false;
+      }
+      continue;
+    }
+    if (inMultiLineComment) {
+      if (ch === '*' && nextCh === '/') {
+        inMultiLineComment = false;
+        i++;
+      }
+      continue;
+    }
+
+    if (ch === '/' && nextCh === '/') {
+      inSingleLineComment = true;
+      i++;
+      continue;
+    }
+    if (ch === '/' && nextCh === '*') {
+      inMultiLineComment = true;
+      i++;
+      continue;
+    }
+
     if (ch === '{') braceDepth++;
     if (ch === '}') braceDepth--;
     if (braceDepth < 0) break;
@@ -38,9 +68,39 @@ export function validateStructural(glsl: string): DiagnosticMessage[] {
     });
   }
 
-  // Check balanced parentheses
+  // Check balanced parentheses (comment-aware)
   let parenDepth = 0;
-  for (const ch of glsl) {
+  inSingleLineComment = false;
+  inMultiLineComment = false;
+  for (let i = 0; i < glsl.length; i++) {
+    const ch = glsl[i];
+    const nextCh = glsl[i + 1];
+
+    if (inSingleLineComment) {
+      if (ch === '\n') {
+        inSingleLineComment = false;
+      }
+      continue;
+    }
+    if (inMultiLineComment) {
+      if (ch === '*' && nextCh === '/') {
+        inMultiLineComment = false;
+        i++;
+      }
+      continue;
+    }
+
+    if (ch === '/' && nextCh === '/') {
+      inSingleLineComment = true;
+      i++;
+      continue;
+    }
+    if (ch === '/' && nextCh === '*') {
+      inMultiLineComment = true;
+      i++;
+      continue;
+    }
+
     if (ch === '(') parenDepth++;
     if (ch === ')') parenDepth--;
     if (parenDepth < 0) break;
