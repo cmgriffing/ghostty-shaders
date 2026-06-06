@@ -25,6 +25,8 @@
 // https://www.youtube.com/watch?v=eKtsY7hYTPg
 //
 
+#define PI 3.1415926535897932384626433832795
+
 #define S(x, y, z) smoothstep(x, y, z)
 #define B(a, b, edge, t) S(a-edge, a+edge, t)*S(b+edge, b-edge, t)
 #define sat(x) clamp(x,0.,1.)
@@ -40,6 +42,12 @@
 //#define DROP_DEBUG
 
 vec3 ro, rd;
+
+float normalized_time() {
+    return mod(iTime, 753.9822);
+    // return iTime;
+    // return iTime + 4000000.0;
+}
 
 float N(float t) {
     return fract(sin(t * 10234.324) * 123423.23512);
@@ -90,7 +98,7 @@ float DeltaSawTooth(float t) {
 }
 
 vec2 GetDrops(vec2 uv, float seed, float m) {
-    float t = iTime + m * 30.;
+    float t = normalized_time() + m * 30.;
     vec2 o = vec2(0.);
 
     #ifndef DROP_DEBUG
@@ -148,7 +156,7 @@ void CameraSetup(vec2 uv, vec3 pos, vec3 lookat, float zoom, float m) {
     vec3 f = normalize(lookat - ro);
     vec3 r = cross(vec3(0., 1., 0.), f);
     vec3 u = cross(f, r);
-    float t = iTime;
+    float t = normalized_time();
 
     vec2 offs = vec2(0.);
     #ifdef RAIN
@@ -304,7 +312,7 @@ vec3 EnvironmentLights(float i, float t) {
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
-    float t = iTime;
+    float t = normalized_time();
     vec3 col = vec3(0.);
     vec2 uv = fragCoord.xy / iResolution.xy; // 0 <> 1
 
