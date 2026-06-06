@@ -1,0 +1,20 @@
+{
+  "name": "shadertoy2ghostty",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "convert": "tsx src/index.ts",
+    "verify:ghostty-blend": "tsx src/verify-ghostty-blend-regression.ts",
+    "verify:local-main": "tsx src/verify-local-main.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.7",
+    "typescript": "^5.4"
+  },
+  "dependencies": {
+    "glsl-parser": "^2.0.1",
+    "glsl-tokenizer": "^2.1.5"
+  }
+}
